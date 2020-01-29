@@ -36,7 +36,7 @@ def SpawnWorld(sizeX, sizeY, population, threshold1, threshold1Percent=1, thresh
 	numBlank = 0
 	numNotAgent = sizeX*sizeY - numAgent*2
 	numThresh1 = 0
-	numThresh1Cap = numAgent*2*threshold1Percent
+	numThresh1Cap = int(numAgent*2*threshold1Percent)
 	numThresh2 = 0
 	numThresh2Cap = numAgent*2 - numThresh1Cap
 
@@ -88,9 +88,19 @@ def SpawnWorld(sizeX, sizeY, population, threshold1, threshold1Percent=1, thresh
 			#set the threshold for agents
 			if flagID == 'X' or flagID == 'O':
 				if randThreshID < divisionThresh:
-					threshold = threshold1
-				else:
-					threshold = threshold2
+						if numThresh1 < numThresh1Cap:
+							threshold = threshold1
+							numThresh1 += 1
+						else:
+							threshold = threshold2
+							numThresh2 += 1		
+				if randThreshID > divisionThresh:
+						if numThresh2 < numThresh2Cap:
+							threshold = threshold2
+							numThresh2 += 1	
+						else:
+							threshold = threshold1
+							numThresh1 += 1
 
 			#create an agent
 			if flagID == 'X':
@@ -106,14 +116,18 @@ def SpawnWorld(sizeX, sizeY, population, threshold1, threshold1Percent=1, thresh
 			#tempAgent = agent('X',threshold)		
 			tempRow.append(tempAgent)
 		world.append(tempRow)
-	'''
+	
 	#some debug statements to verify correct generation
 	print ("numX = %d" % (numX))
 	print ("numO = %d" % (numO))
 	print ("numAgent = %d" % (numAgent))
 	print ("numBLank = %d" % (numBlank))
 	print ("numNotAgent = %d" % (numNotAgent))
-	'''
+	print ("numThresh1 = %d" % (numThresh1))
+	print ("numThresh1Cap = %d" % (numThresh1Cap))
+	print ("numThresh2 = %d" % (numThresh2))
+	print ("numThresh2Cap = %d" % (numThresh2Cap))
+	
 	return world
 
 def ShowWorld(world, setting='id'):
@@ -172,7 +186,7 @@ def ShowWorld(world, setting='id'):
 	PrintBorder()
 
 def Sim1():
-	world_init = SpawnWorld(50,50,0.75,3)
+	world_init = SpawnWorld(50,50,0.75,3,.75,5)
 
 	ShowWorld(world_init)
 	#ShowWorld(world_init, 'threshold')
