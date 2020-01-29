@@ -128,12 +128,76 @@ def SpawnWorld(sizeX, sizeY, population, threshold1, threshold1Percent=1, thresh
 	print ("numThresh2 = %d" % (numThresh2))
 	print ("numThresh2Cap = %d" % (numThresh2Cap))
 	
+	world = CheckSatisfaction(world)
 	return world
+
+def CheckSatisfaction(world):
+	"""
+	This function checks the world to see which agents are 
+	satisfied and which are not, adjusting the world accordingly.
+	Parameters:
+		world - pass in a matrix of agents, aka the world
+	Returns:
+		a new world
+	"""
+	#calculate size of world
+	rows = len(world)
+	columns = len(world[0])
+
+
+	#iterate through world and check satisfaction
+	for i in range(rows):
+		for k in range(columns):
+
+	return world
+
+#calculate neighbors
+def FindNeighbors(world, targetX, targetY):
+	"""
+	This function finds the neighboring cells of a given cell in
+	the world.
+	Parameters:
+		world - pass in a matrix of agents, aka the world
+		targetX - x-position in the world matrix of target cell
+		targetY - y-position in the world matrix of target cell
+	Returns:
+		an array of cells
+	"""
+
+	#calculate size of world
+	rows = len(world)
+	columns = len(world[0])
+	neighbors = []
+	if targetX == 0:
+		
+	if targetX == columns:
+
+	if targetY == 0:
+
+	if targetY == rows:
+
+
+	neighbors.append(world[targetY+1][targetX+1])
+	neighbors.append(world[targetY+1][targetX+0])
+	neighbors.append(world[targetY+1][targetX-1])
+	neighbors.append(world[targetY+0][targetX+1])
+	neighbors.append(world[targetY+0][targetX-1])
+	neighbors.append(world[targetY-1][targetX+1])
+	neighbors.append(world[targetY-1][targetX+0])
+	neighbors.append(world[targetY-1][targetX-1])
+	return neighbors
 
 def ShowWorld(world, setting='id'):
 	"""
 	This function prints the world into the terminal. You have
-	the option of showing a property of the agent other than id.
+	the option of showi+1ng a prop+1erty of the agent other than id.
+	the option of showi+1ng a prop+0erty of the agent other than id.
+	the option of showi+1ng a prop-1erty of the agent other than id.
+	the option of showi+0ng a prop+1erty of the agent other than id.
+	the option of showi+0ng a prop-1erty of the agent other than id.
+	the option of showi-1ng a prop+1erty of the agent other than id.
+	the option of showi-1ng a prop+0erty of the agent other than id.
+	the option of showi-1ng a prop-1erty of the agent other than id.
 	Parameters:
 		world - pass in a matrix of agents, aka the world
 		setting - either 'id', 'threshold', or 'satisfied'; use
@@ -166,19 +230,19 @@ def ShowWorld(world, setting='id'):
 		for k in range(columns):
 			if setting == 'threshold':
 				if world[k][i].id != ' ':
-					rowText += str(world[k][i].threshold) + ' '
+					rowText += str(world[i][k].threshold) + ' '
 				else:
 					rowText += '  '					
 			elif setting == 'satisfied':
-				if world[k][i].id != ' ':
-					if world[k][i].satisfied:
+				if world[i][k].id != ' ':
+					if world[i][k].satisfied:
 						rowText += ':) '
 					else:
 						 rowText += ':( '
 				else:
 					rowText += '   '
 			else:
-				rowText += world[k][i].id + ' '
+				rowText += world[i][k].id + ' '
 
 		rowText += "|"
 		print rowText
