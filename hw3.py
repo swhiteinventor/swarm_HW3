@@ -143,11 +143,30 @@ def CheckSatisfaction(world):
 	#calculate size of world
 	rows = len(world)
 	columns = len(world[0])
-
-
 	#iterate through world and check satisfaction
 	for i in range(rows):
 		for k in range(columns):
+			neighbors = FindNeighbors(world, k, i)
+			neighborsX = 0
+			neighborsO = 0
+			neighborsNot = 0
+			#count the types of neighbors
+			for j in range(len(neighbors)):
+				if neighbors[j].id == 'X':
+					neighborsX += 1
+				elif neighbors[j].id == 'O':
+					neighborsO += 1
+				else:
+					neighborsNot += 1
+			#decide if agent is satisfied
+			if world[i][k].id == 'X' and neighborsX >= world[i][k].threshold:
+				world[i][k].satisfied = True
+			elif world[i][k].id == 'O' and neighborsO >= world[i][k].threshold:
+				world[i][k].satisfied = True
+			elif world[i][k].id == ' ' and neighborsNot >= world[i][k].threshold:
+				world[i][k].satisfied = True
+			else:
+				world[i][k].satisfied = False
 
 	return world
 
@@ -163,30 +182,36 @@ def FindNeighbors(world, targetX, targetY):
 	Returns:
 		an array of cells
 	"""
-
 	#calculate size of world
 	rows = len(world)
 	columns = len(world[0])
 	neighbors = []
-	if targetX == 0:
-		
-	if targetX == columns:
-
-	if targetY == 0:
-
-	if targetY == rows:
-
-
-	neighbors.append(world[targetY+1][targetX+1])
-	neighbors.append(world[targetY+1][targetX+0])
-	neighbors.append(world[targetY+1][targetX-1])
-	neighbors.append(world[targetY+0][targetX+1])
+	upOffset = 1
+	rightOffset = 1
+	#check for overshoot, undershoot automatically loops
+	if targetX == columns-1:
+		rightOffset = -1*targetX
+	if targetY == rows-1:
+		upOffset = -1*targetY
+	
+	#some debug statements to verify correct array wrapping
+	print ("targetX = %d" % (targetX))
+	print ("columns = %d" % (columns))
+	print ("targetY = %d" % (targetY))
+	print ("rows = %d" % (rows))
+	print ("rightOffset = %d" % (rightOffset))
+	print ("upOffset = %d" % (upOffset))
+	
+	#retrieve neighbors
+	neighbors.append(world[targetY+upOffset][targetX+rightOffset])
+	neighbors.append(world[targetY+upOffset][targetX+0])
+	neighbors.append(world[targetY+upOffset][targetX-1])
+	neighbors.append(world[targetY+0][targetX+rightOffset])
 	neighbors.append(world[targetY+0][targetX-1])
-	neighbors.append(world[targetY-1][targetX+1])
+	neighbors.append(world[targetY-1][targetX+rightOffset])
 	neighbors.append(world[targetY-1][targetX+0])
 	neighbors.append(world[targetY-1][targetX-1])
 	return neighbors
-
 def ShowWorld(world, setting='id'):
 	"""
 	This function prints the world into the terminal. You have
@@ -215,9 +240,6 @@ def ShowWorld(world, setting='id'):
 		rowText = '-'
 		widthWorld = columns*2+2
 		
-		if setting == 'satisfied':
-			widthWorld = columns*3+2
-		
 		for i in range(widthWorld):
 			rowText += '-'
 		print rowText
@@ -236,11 +258,11 @@ def ShowWorld(world, setting='id'):
 			elif setting == 'satisfied':
 				if world[i][k].id != ' ':
 					if world[i][k].satisfied:
-						rowText += ':) '
+						rowText += 'H '
 					else:
-						 rowText += ':( '
+						 rowText += 's '
 				else:
-					rowText += '   '
+					rowText += '  '
 			else:
 				rowText += world[i][k].id + ' '
 
@@ -250,11 +272,11 @@ def ShowWorld(world, setting='id'):
 	PrintBorder()
 
 def Sim1():
-	world_init = SpawnWorld(50,50,0.75,3,.75,5)
+	world_init = SpawnWorld(5,5,0.75,3)
 
 	ShowWorld(world_init)
 	#ShowWorld(world_init, 'threshold')
-	#ShowWorld(world_init, 'satisfied')
+	ShowWorld(world_init, 'satisfied')
 
 
 if __name__ == '__main__':
