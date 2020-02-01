@@ -2,12 +2,15 @@
 from random import randint
 
 class agent:
+
 	def __init__(self, id, threshold):
+		
 		self.id = id
 		self.threshold = threshold
 		self.satisfied = False
 
 def SpawnWorld(sizeX, sizeY, population, threshold1, threshold1Percent=1, threshold2=0):
+	
 	"""
 	This function creates a 'sizeX' by 'sizeY' grid. Each cell in the 
 	grid is randomly populated with an agent that identifies as an 'X',
@@ -116,7 +119,7 @@ def SpawnWorld(sizeX, sizeY, population, threshold1, threshold1Percent=1, thresh
 			#tempAgent = agent('X',threshold)		
 			tempRow.append(tempAgent)
 		world.append(tempRow)
-	
+	'''
 	#some debug statements to verify correct generation
 	print ("numX = %d" % (numX))
 	print ("numO = %d" % (numO))
@@ -127,11 +130,13 @@ def SpawnWorld(sizeX, sizeY, population, threshold1, threshold1Percent=1, thresh
 	print ("numThresh1Cap = %d" % (numThresh1Cap))
 	print ("numThresh2 = %d" % (numThresh2))
 	print ("numThresh2Cap = %d" % (numThresh2Cap))
-	
+	'''
+	#check satisfaction and return the world
 	world = CheckSatisfaction(world)
 	return world
 
 def CheckSatisfaction(world):
+	
 	"""
 	This function checks the world to see which agents are 
 	satisfied and which are not, adjusting the world accordingly.
@@ -140,16 +145,21 @@ def CheckSatisfaction(world):
 	Returns:
 		a new world
 	"""
+	
 	#calculate size of world
 	rows = len(world)
 	columns = len(world[0])
+	
 	#iterate through world and check satisfaction
 	for i in range(rows):
 		for k in range(columns):
+			
+			#find neighbors and set some variables for counting
 			neighbors = FindNeighbors(world, k, i)
 			neighborsX = 0
 			neighborsO = 0
 			neighborsNot = 0
+			
 			#count the types of neighbors
 			for j in range(len(neighbors)):
 				if neighbors[j].id == 'X':
@@ -158,6 +168,7 @@ def CheckSatisfaction(world):
 					neighborsO += 1
 				else:
 					neighborsNot += 1
+			
 			#decide if agent is satisfied
 			if world[i][k].id == 'X' and neighborsX >= world[i][k].threshold:
 				world[i][k].satisfied = True
@@ -168,10 +179,11 @@ def CheckSatisfaction(world):
 			else:
 				world[i][k].satisfied = False
 
+	#all done updating satisfaction
 	return world
 
-#calculate neighbors
 def FindNeighbors(world, targetX, targetY):
+	
 	"""
 	This function finds the neighboring cells of a given cell in
 	the world.
@@ -182,18 +194,21 @@ def FindNeighbors(world, targetX, targetY):
 	Returns:
 		an array of cells
 	"""
+
 	#calculate size of world
 	rows = len(world)
 	columns = len(world[0])
 	neighbors = []
 	upOffset = 1
 	rightOffset = 1
+
 	#check for overshoot, undershoot automatically loops
 	if targetX == columns-1:
 		rightOffset = -1*targetX
 	if targetY == rows-1:
 		upOffset = -1*targetY
-	
+
+	'''
 	#some debug statements to verify correct array wrapping
 	print ("targetX = %d" % (targetX))
 	print ("columns = %d" % (columns))
@@ -201,7 +216,8 @@ def FindNeighbors(world, targetX, targetY):
 	print ("rows = %d" % (rows))
 	print ("rightOffset = %d" % (rightOffset))
 	print ("upOffset = %d" % (upOffset))
-	
+	'''
+
 	#retrieve neighbors
 	neighbors.append(world[targetY+upOffset][targetX+rightOffset])
 	neighbors.append(world[targetY+upOffset][targetX+0])
@@ -211,26 +227,31 @@ def FindNeighbors(world, targetX, targetY):
 	neighbors.append(world[targetY-1][targetX+rightOffset])
 	neighbors.append(world[targetY-1][targetX+0])
 	neighbors.append(world[targetY-1][targetX-1])
+
+	#all done finding neighbors
 	return neighbors
-def ShowWorld(world, setting='id'):
+
+def ShowWorld(world, simulation, step, threshold1, threshold1Percent, threshold2, setting):
+	
 	"""
 	This function prints the world into the terminal. You have
-	the option of showi+1ng a prop+1erty of the agent other than id.
-	the option of showi+1ng a prop+0erty of the agent other than id.
-	the option of showi+1ng a prop-1erty of the agent other than id.
-	the option of showi+0ng a prop+1erty of the agent other than id.
-	the option of showi+0ng a prop-1erty of the agent other than id.
-	the option of showi-1ng a prop+1erty of the agent other than id.
-	the option of showi-1ng a prop+0erty of the agent other than id.
-	the option of showi-1ng a prop-1erty of the agent other than id.
+	the option of showing a property of the agent other than id.
 	Parameters:
 		world - pass in a matrix of agents, aka the world
+		simulation - what simulation number
+		step - what step of the simulation
+		threshold1 - an integer 0 to 8 that defines how homophilous an
+			agent is
+		threshold1Percent - a fraction of how many agents should have 
+			the threshold1 vs having the threshold2
+		threshold2 - just like the previous threshold integer, but lets
+			you specify a different threshold value
 		setting - either 'id', 'threshold', or 'satisfied'; use
-			to specify the display to show a property; defaults
-			to 'id'
+			to specify the display to show a property
 	Returns:
 		nothing
 	"""
+
 	#calculate size of world
 	rows = len(world)
 	columns = len(world[0])
@@ -244,9 +265,13 @@ def ShowWorld(world, setting='id'):
 			rowText += '-'
 		print rowText
 
-
-	#iterate through world and print agent
+	#print a fancy title
 	PrintBorder()
+	print("----------------------->    SIMULATION Number: %2d    STEP Number: %4d    <----------------------------") % (simulation, step)
+	print("------------>    %2d%%  agents with Threshold: %1d      %2d%% agents with Theshold 2: %1d    <---------------") % (threshold1Percent*100, threshold1, (100 - threshold1Percent*100), threshold2)
+	PrintBorder()
+	
+	#iterate through world and print agent
 	for i in range(rows):
 		rowText = '| '
 		for k in range(columns):
@@ -258,9 +283,9 @@ def ShowWorld(world, setting='id'):
 			elif setting == 'satisfied':
 				if world[i][k].id != ' ':
 					if world[i][k].satisfied:
-						rowText += 'H '
+						rowText += '@ '
 					else:
-						 rowText += 's '
+						 rowText += '* '
 				else:
 					rowText += '  '
 			else:
@@ -268,16 +293,72 @@ def ShowWorld(world, setting='id'):
 
 		rowText += "|"
 		print rowText
-		#print "\n"
+
+	#print footer
 	PrintBorder()
+	if setting == 'id':
+		print("----------------------->    KEY:    'X' = 'Agent X'    'O' = 'Agent O'    <----------------------------")
+	elif setting == 'threshold':
+		print("------------------>    KEY:    'N' = 'threshold value N, ranging from 0 to 8'    <---------------------")
+	elif setting == 'satisfied':
+		print("------------------>    KEY:    '@'' = 'satisfied'     '*' = 'not satisfied'    <-----------------------")
+	PrintBorder()
+	print("\n")
 
-def Sim1():
-	world_init = SpawnWorld(5,5,0.75,3)
+def UpdateWorld(world):
+	"""
+	This function goes through the world moving unsatisfied
+	agents to the closest empty spot that would satisfy their 
+	threshold requirement.
+	Parameters:
+		world - pass in a matrix of agents, aka the world
+	Returns:
+		an updated world
+	"""
 
-	ShowWorld(world_init)
-	#ShowWorld(world_init, 'threshold')
-	ShowWorld(world_init, 'satisfied')
+	return world
 
+class Simulation:
+
+	def __init__(self, simNumber, totalRuns, sizeX, sizeY, population, threshold1, threshold1Percent=1, threshold2=0):
+		
+		self.simNumber = simNumber
+		self.totalRuns = totalRuns -1
+		self.sizeX = sizeX
+		self.sizeY = sizeY
+		self.population = population
+		self.threshold1 = threshold1
+		self.threshold1Percent = threshold1Percent
+		self.threshold2 = threshold2
+		self.worlds = []
+		self.worlds.append(SpawnWorld(sizeX, sizeY, population, threshold1, threshold1Percent, threshold2))
+		#run the simulation
+		for i in (range(self.totalRuns)):
+			self.worlds.append(UpdateWorld(self.worlds[i]))
+
+	def show(self, showRuns, setting = 'id'):
+		"""
+		This function lets you print any of the simulation runs 
+		that were calculated.
+		Parameters:
+			showRuns - an array of integers that represent the 
+				runs that should be displayed
+			setting - either 'id', 'threshold', or 'satisfied'; use
+			to specify the display to show a property
+		Returns:
+			nothing
+		"""
+		#iterate through runs to show
+		if type(showRuns).__name__ == 'int':
+			run = showRuns
+			showRuns = []
+			showRuns.append(run)
+		for i in range(len(showRuns)):
+			if i >= 0 and showRuns[i] < len(self.worlds):
+				ShowWorld(self.worlds[showRuns[i]], self.simNumber, showRuns[i], self.threshold1, self.threshold1Percent, self.threshold2, setting)
+			else:
+				print("Simulation number %d is invalid and therefore was not displayed. \n") % (showRuns[i])
 
 if __name__ == '__main__':
-	Sim1()
+	simA = Simulation(1,10,50,50,0.6,3,0.8,5)
+	simA.show([0,1,10])
