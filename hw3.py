@@ -8,6 +8,11 @@ class agent:
 		self.id = id
 		self.threshold = threshold
 		self.satisfied = False
+	
+	def clear(self):
+		self.id = ' '
+		self.threshold = 0
+		self.satisfied = False
 
 def SpawnWorld(sizeX, sizeY, population, threshold1, threshold1Percent=1, threshold2=0):
 	
@@ -143,7 +148,7 @@ def CheckSatisfaction(world):
 	Parameters:
 		world - pass in a matrix of agents, aka the world
 	Returns:
-		a new world
+		world - a world with updated satisfaction
 	"""
 	
 	#calculate size of world
@@ -192,7 +197,7 @@ def FindNeighbors(world, targetX, targetY):
 		targetX - x-position in the world matrix of target cell
 		targetY - y-position in the world matrix of target cell
 	Returns:
-		an array of cells
+		neighbors - an array of cells
 	"""
 
 	#calculate size of world
@@ -306,6 +311,7 @@ def ShowWorld(world, simulation, step, threshold1, threshold1Percent, threshold2
 	print("\n")
 
 def UpdateWorld(world):
+	
 	"""
 	This function goes through the world moving unsatisfied
 	agents to the closest empty spot that would satisfy their 
@@ -313,10 +319,58 @@ def UpdateWorld(world):
 	Parameters:
 		world - pass in a matrix of agents, aka the world
 	Returns:
-		an updated world
+		worldUpdated - an updated world
+	"""
+	
+
+	#calculate size of world
+	rows = len(world)
+	columns = len(world[0])
+
+	#make a copy of the world
+	worldUpdated = world
+
+	#iterate through the old world to populate the new world
+	for i in range(rows):
+		for k in range(columns):
+
+			#if the cell isn't blank in the old world and isn't 
+			# satisfied in the new world, check the new world
+			# for a place to move to
+			if world[i][k].id != ' ' and worldUpdated[i][k].satisfied == False:
+				
+				#finds somewhere to move to
+				moveX, moveY = findSatisfaction(worldUpdated, k, i)
+
+				#copy agent to new world
+				worldUpdated[moveY][moveX] = world[i][k]
+
+				#erase agent's old location
+				worldUpdated[i][k].clear()
+
+				#update the new world's satisfaction
+				worldUpdated = CheckSatisfaction(worldUpdated)
+
+	return worldUpdated
+
+def findSatisfaction(world, targetX, targetY):
+
+	"""
+	This function looks trhough the provided world to identify
+	and return the closest position that would make the given
+	agent satisfied.
+	Parameters:
+		world - pass in a matrix of agents, aka the world
+		targetX - x-position in the world matrix of target cell
+		targetY - y-position in the world matrix of target cell
+	Returns:
+		moveX
+		moveY
 	"""
 
-	return world
+	
+
+	return moveX, moveY
 
 class Simulation:
 
