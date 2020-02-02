@@ -1,13 +1,22 @@
 #!/usr/bin/env python
 from random import randint
+from collections import deque 
+import copy
 
 class agent:
 
-	def __init__(self, id, threshold):
+	def __init__(self, id, threshold, x, y):
 		
 		self.id = id
 		self.threshold = threshold
 		self.satisfied = False
+		self.x = x
+		self.y = y
+
+	def move(self, agent):
+		self.id = agent.id
+		self.threshold = agent.threshold
+		self.satisfied = agent.satisfied
 	
 	def clear(self):
 		self.id = ' '
@@ -112,13 +121,13 @@ def SpawnWorld(sizeX, sizeY, population, threshold1, threshold1Percent=1, thresh
 
 			#create an agent
 			if flagID == 'X':
-				tempAgent = agent('X', threshold)
+				tempAgent = agent('X', threshold, k, i)
 				numX += 1
 			elif flagID == 'O':
-				tempAgent = agent('O', threshold)
+				tempAgent = agent('O', threshold, k, i)
 				numO += 1
 			else:
-				tempAgent = agent(' ', 0)
+				tempAgent = agent(' ', 0, k, i)
 				numBlank += 1	
 
 			#tempAgent = agent('X',threshold)		
@@ -276,12 +285,16 @@ def ShowWorld(world, simulation, step, threshold1, threshold1Percent, threshold2
 	print("------------>    %2d%%  agents with Threshold: %1d      %2d%% agents with Theshold 2: %1d    <---------------") % (threshold1Percent*100, threshold1, (100 - threshold1Percent*100), threshold2)
 	PrintBorder()
 	
+	#count numbers satisfied and not satisfied
+	numSatisfied = 0
+	numUnsatisfied = 0
+
 	#iterate through world and print agent
 	for i in range(rows):
 		rowText = '| '
 		for k in range(columns):
 			if setting == 'threshold':
-				if world[k][i].id != ' ':
+				if world[i][k].id != ' ':
 					rowText += str(world[i][k].threshold) + ' '
 				else:
 					rowText += '  '					
@@ -289,8 +302,10 @@ def ShowWorld(world, simulation, step, threshold1, threshold1Percent, threshold2
 				if world[i][k].id != ' ':
 					if world[i][k].satisfied:
 						rowText += '@ '
+						numSatisfied += 1
 					else:
 						 rowText += '* '
+						 numUnsatisfied += 1
 				else:
 					rowText += '  '
 			else:
@@ -299,7 +314,10 @@ def ShowWorld(world, simulation, step, threshold1, threshold1Percent, threshold2
 		rowText += "|"
 		print rowText
 
-	#print footer
+	#print fancy footer
+	PrintBorder()
+	populationPercent = (numSatisfied+numUnsatisfied)*100/(rows*columns) #should be the same as what was entered eariler
+	print("------>    STATS:    %4d agents satisfied, %4d agents not satisfied,    %d%% population    <----------") % (numSatisfied, numUnsatisfied, populationPercent)
 	PrintBorder()
 	if setting == 'id':
 		print("----------------------->    KEY:    'X' = 'Agent X'    'O' = 'Agent O'    <----------------------------")
@@ -327,33 +345,42 @@ def UpdateWorld(world):
 	rows = len(world)
 	columns = len(world[0])
 
-	#make a copy of the world
-	worldUpdated = world
+	#make a deep copy of the world
+	worldUpdated = copy.deepcopy(world)
 
 	#iterate through the old world to populate the new world
 	for i in range(rows):
 		for k in range(columns):
-
+			#print("id = %s, threshold = %d, satisfied = %d, x = %d, y = %d") % (world[i][k].id, world[i][k].threshold, world[i][k].satisfied, world[i][k].x, world[i][k].y)
 			#if the cell isn't blank in the old world and isn't 
 			# satisfied in the new world, check the new world
 			# for a place to move to
 			if world[i][k].id != ' ' and worldUpdated[i][k].satisfied == False:
 				
 				#finds somewhere to move to
-				moveX, moveY = findSatisfaction(worldUpdated, k, i)
+				move = FindSatisfaction(worldUpdated, k, i)
 
 				#copy agent to new world
-				worldUpdated[moveY][moveX] = world[i][k]
+				worldUpdated[move[1]][move[0]].move(world[i][k])
+				#print("moves   agent %s at (%d,%d) to (%d,%d)") % (world[i][k].id, world[i][k].x, world[i][k].y, move[0], move[1])
+				#print("before: agent %s at (%d,%d) ---------") % (world[move[1]][move[0]].id, world[move[1]][move[0]].x, world[move[1]][move[0]].y)
+				#print("now     agent %s at (%d,%d) ---------") % (worldUpdated[move[1]][move[0]].id, worldUpdated[move[1]][move[0]].x, worldUpdated[move[1]][move[0]].y)
 
 				#erase agent's old location
 				worldUpdated[i][k].clear()
+				#print("And gone:     %s at (%d,%d) ---------") % (worldUpdated[i][k].id, worldUpdated[i][k].x, worldUpdated[i][k].y)
 
 				#update the new world's satisfaction
 				worldUpdated = CheckSatisfaction(worldUpdated)
-
+			'''
+			elif world[i][k] == ' ':
+				print("EMPTY:  agent %s at (%d,%d) <<<<<<<<<<<<<<<<<<<<<<<<") % (world[i][k].id, world[i][k].x, world[i][k].y)
+			elif worldUpdated[i][k].satisfied == True:
+				print("HAPPY:  agent %s at (%d,%d) <<<<<<<<<<<<<<<<<<<<<<<<") % (world[i][k].id, world[i][k].x, world[i][k].y)
+			'''
 	return worldUpdated
 
-def findSatisfaction(world, targetX, targetY):
+def FindSatisfaction(world, targetX, targetY):
 
 	"""
 	This function looks trhough the provided world to identify
@@ -368,16 +395,39 @@ def findSatisfaction(world, targetX, targetY):
 		moveY
 	"""
 
-	
+	search = world[targetY][targetX]
+	openSet = deque()
+	closedSet = []
 
-	return moveX, moveY
+	openSet.append(world[targetY][targetX])
+
+	while len(openSet) != 0:
+		cell = openSet.popleft()
+		closedSet.append(cell)
+		cellNeighbors = FindNeighbors(world, cell.x, cell.y)
+		for i in range(len(cellNeighbors)):
+			if cellNeighbors[i] not in closedSet:
+				if cellNeighbors[i].id == ' ':
+					#check if cell would satisfy agent
+					checkNeighbors = FindNeighbors(world, cellNeighbors[i].x, cellNeighbors[i].y)
+					searchCount = 0
+					for k in range(len(checkNeighbors)):
+						if checkNeighbors[k].id == search.id and checkNeighbors[k].x != search.x and checkNeighbors[k].y != search.y:
+							searchCount += 1
+					if searchCount >= search.threshold:
+						return [cellNeighbors[i].x, cellNeighbors[i].y]
+				openSet.append(cellNeighbors[i])
+
+	#print("didn't find a spot")
+	return [targetX, targetY]
+
 
 class Simulation:
 
 	def __init__(self, simNumber, totalRuns, sizeX, sizeY, population, threshold1, threshold1Percent=1, threshold2=0):
 		
 		self.simNumber = simNumber
-		self.totalRuns = totalRuns -1
+		self.totalRuns = totalRuns
 		self.sizeX = sizeX
 		self.sizeY = sizeY
 		self.population = population
@@ -385,10 +435,13 @@ class Simulation:
 		self.threshold1Percent = threshold1Percent
 		self.threshold2 = threshold2
 		self.worlds = []
+		print("Calculating run    0 for simulation %2d") % (simNumber)
 		self.worlds.append(SpawnWorld(sizeX, sizeY, population, threshold1, threshold1Percent, threshold2))
 		#run the simulation
 		for i in (range(self.totalRuns)):
+			print("Calculating run %4d for simulation %2d") % (i+1, simNumber)
 			self.worlds.append(UpdateWorld(self.worlds[i]))
+
 
 	def show(self, showRuns, setting = 'id'):
 		"""
@@ -411,8 +464,9 @@ class Simulation:
 			if i >= 0 and showRuns[i] < len(self.worlds):
 				ShowWorld(self.worlds[showRuns[i]], self.simNumber, showRuns[i], self.threshold1, self.threshold1Percent, self.threshold2, setting)
 			else:
-				print("Simulation number %d is invalid and therefore was not displayed. \n") % (showRuns[i])
+				print("Entered simulation number %d is invalid and therefore was not displayed. \n") % (showRuns[i])
 
 if __name__ == '__main__':
-	simA = Simulation(1,10,50,50,0.6,3,0.8,5)
-	simA.show([0,1,10])
+	simA = Simulation(1,10,50,50,0.8,5)
+	simA.show([0,4])
+	simA.show([4], "satisfied")
