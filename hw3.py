@@ -293,19 +293,23 @@ def ShowWorld(world, simulation, step, threshold1, threshold1Percent, threshold2
 	for i in range(rows):
 		rowText = '| '
 		for k in range(columns):
+			#count satisfied agents
+			if world[i][k].satisfied:
+				numSatisfied += 1
+			else:
+				numUnsatisfied += 1
+
 			if setting == 'threshold':
 				if world[i][k].id != ' ':
 					rowText += str(world[i][k].threshold) + ' '
 				else:
-					rowText += '  '					
+					rowText += '  '			
 			elif setting == 'satisfied':
 				if world[i][k].id != ' ':
 					if world[i][k].satisfied:
 						rowText += '@ '
-						numSatisfied += 1
 					else:
 						 rowText += '* '
-						 numUnsatisfied += 1
 				else:
 					rowText += '  '
 			else:
@@ -369,15 +373,16 @@ def UpdateWorld(world):
 				#erase agent's old location
 				worldUpdated[i][k].clear()
 				#print("And gone:     %s at (%d,%d) ---------") % (worldUpdated[i][k].id, worldUpdated[i][k].x, worldUpdated[i][k].y)
-
-				#update the new world's satisfaction
-				worldUpdated = CheckSatisfaction(worldUpdated)
 			'''
 			elif world[i][k] == ' ':
 				print("EMPTY:  agent %s at (%d,%d) <<<<<<<<<<<<<<<<<<<<<<<<") % (world[i][k].id, world[i][k].x, world[i][k].y)
 			elif worldUpdated[i][k].satisfied == True:
 				print("HAPPY:  agent %s at (%d,%d) <<<<<<<<<<<<<<<<<<<<<<<<") % (world[i][k].id, world[i][k].x, world[i][k].y)
 			'''
+
+		#update the new world's satisfaction
+		worldUpdated = CheckSatisfaction(worldUpdated)
+
 	return worldUpdated
 
 def FindSatisfaction(world, targetX, targetY):
@@ -467,6 +472,6 @@ class Simulation:
 				print("Entered simulation number %d is invalid and therefore was not displayed. \n") % (showRuns[i])
 
 if __name__ == '__main__':
-	simA = Simulation(1,10,50,50,0.8,5)
-	simA.show([0,4])
-	simA.show([4], "satisfied")
+	simA = Simulation(1,10,50,50,0.6,5)
+	simA.show(range(10))
+	#simA.show([4], "satisfied")
