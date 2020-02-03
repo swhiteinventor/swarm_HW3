@@ -12,6 +12,8 @@ class agent:
 		self.satisfied = False
 		self.x = x
 		self.y = y
+		self.supportX = 0
+		self.supportO = 0
 
 	def move(self, agent):
 		self.id = agent.id
@@ -22,6 +24,28 @@ class agent:
 		self.id = ' '
 		self.threshold = 0
 		self.satisfied = False
+
+	def calcSupport(self, neighbors):
+		self.supportX = 0
+		self.supportO = 0
+			
+		#count the types of neighbors
+		for j in range(len(neighbors)):
+			if neighbors[j].id == 'X':
+				self.supportX += 1
+			elif neighbors[j].id == 'O':
+				self.supportO += 1
+			print("Self (%d,%d), Neighbor (%d,%d)") % (self.x, self.y, neighbors[j].x, neighbors[j].y)
+
+		#update satisfaction
+		if self.id == 'X' and self.supportX >= self.threshold:
+			self.satisfied = True
+		elif self.id == 'O' and self.supportO >= self.threshold:
+			self.satisfied = True
+
+		else:
+			self.satisfied = False
+
 
 def SpawnWorld(sizeX, sizeY, population, threshold1, threshold1Percent=1, threshold2=0):
 	
@@ -128,7 +152,7 @@ def SpawnWorld(sizeX, sizeY, population, threshold1, threshold1Percent=1, thresh
 				numO += 1
 			else:
 				tempAgent = agent(' ', 0, k, i)
-				numBlank += 1	
+				numBlank += 1
 
 			#tempAgent = agent('X',threshold)		
 			tempRow.append(tempAgent)
@@ -149,13 +173,20 @@ def SpawnWorld(sizeX, sizeY, population, threshold1, threshold1Percent=1, thresh
 	world = CheckSatisfaction(world)
 	return world
 
-def CheckSatisfaction(world):
+def CheckSatisfaction(world, targetX=None , targetY=None):
 	
 	"""
 	This function checks the world to see which agents are 
 	satisfied and which are not, adjusting the world accordingly.
+	You can also just check locally.
 	Parameters:
 		world - pass in a matrix of agents, aka the world
+		targetX - x-position in the world matrix of target cell;
+			this is an optional field that can be filled in if
+			local checking is desired rather than global checking
+		targetY - y-position in the world matrix of target cell;
+			this is an optional field that can be filled in if
+			local checking is desired rather than global checking
 	Returns:
 		world - a world with updated satisfaction
 	"""
@@ -164,34 +195,27 @@ def CheckSatisfaction(world):
 	rows = len(world)
 	columns = len(world[0])
 	
-	#iterate through world and check satisfaction
-	for i in range(rows):
-		for k in range(columns):
+	def check(world, locationX, locationY):
+		#find neighbors
+				neighbors = FindNeighbors(world, locationX, locationY)
+				
+				#have each agent look around and decide if they're happy
+				world[locationX][locationY].calcSupport(neighbors)
 			
-			#find neighbors and set some variables for counting
-			neighbors = FindNeighbors(world, k, i)
-			neighborsX = 0
-			neighborsO = 0
-			neighborsNot = 0
-			
-			#count the types of neighbors
-			for j in range(len(neighbors)):
-				if neighbors[j].id == 'X':
-					neighborsX += 1
-				elif neighbors[j].id == 'O':
-					neighborsO += 1
-				else:
-					neighborsNot += 1
-			
-			#decide if agent is satisfied
-			if world[i][k].id == 'X' and neighborsX >= world[i][k].threshold:
-				world[i][k].satisfied = True
-			elif world[i][k].id == 'O' and neighborsO >= world[i][k].threshold:
-				world[i][k].satisfied = True
-			elif world[i][k].id == ' ' and neighborsNot >= world[i][k].threshold:
-				world[i][k].satisfied = True
-			else:
-				world[i][k].satisfied = False
+	#update only what has been changed locally
+	if type(targetX) == int and type(targetY) == int:
+		#find impacted neighbors of target
+		impactedNeighbors = FindNeighbors(world, targetX, targetY)
+
+		for j in range(len(impactedNeighbors)):
+			check(world, impactedNeighbors[j].x, impactedNeighbors[j].y)
+	
+	#update the whole world
+	else:
+		#iterate through world and check satisfaction
+		for i in range(rows):
+			for k in range(columns):
+				check(world, k, i)
 
 	#all done updating satisfaction
 	return world
@@ -221,16 +245,6 @@ def FindNeighbors(world, targetX, targetY):
 		rightOffset = -1*targetX
 	if targetY == rows-1:
 		upOffset = -1*targetY
-
-	'''
-	#some debug statements to verify correct array wrapping
-	print ("targetX = %d" % (targetX))
-	print ("columns = %d" % (columns))
-	print ("targetY = %d" % (targetY))
-	print ("rows = %d" % (rows))
-	print ("rightOffset = %d" % (rightOffset))
-	print ("upOffset = %d" % (upOffset))
-	'''
 
 	#retrieve neighbors
 	neighbors.append(world[targetY+upOffset][targetX+rightOffset])
@@ -294,9 +308,9 @@ def ShowWorld(world, simulation, step, threshold1, threshold1Percent, threshold2
 		rowText = '| '
 		for k in range(columns):
 			#count satisfied agents
-			if world[i][k].satisfied:
+			if world[i][k].satisfied and world[i][k].id != ' ':
 				numSatisfied += 1
-			else:
+			elif world[i][k].id != ' ' and not world[i][k].satisfied:
 				numUnsatisfied += 1
 
 			if setting == 'threshold':
@@ -344,7 +358,6 @@ def UpdateWorld(world):
 		worldUpdated - an updated world
 	"""
 	
-
 	#calculate size of world
 	rows = len(world)
 	columns = len(world[0])
@@ -355,7 +368,7 @@ def UpdateWorld(world):
 	#iterate through the old world to populate the new world
 	for i in range(rows):
 		for k in range(columns):
-			#print("id = %s, threshold = %d, satisfied = %d, x = %d, y = %d") % (world[i][k].id, world[i][k].threshold, world[i][k].satisfied, world[i][k].x, world[i][k].y)
+			
 			#if the cell isn't blank in the old world and isn't 
 			# satisfied in the new world, check the new world
 			# for a place to move to
@@ -364,24 +377,19 @@ def UpdateWorld(world):
 				#finds somewhere to move to
 				move = FindSatisfaction(worldUpdated, k, i)
 
-				#copy agent to new world
-				worldUpdated[move[1]][move[0]].move(world[i][k])
-				#print("moves   agent %s at (%d,%d) to (%d,%d)") % (world[i][k].id, world[i][k].x, world[i][k].y, move[0], move[1])
-				#print("before: agent %s at (%d,%d) ---------") % (world[move[1]][move[0]].id, world[move[1]][move[0]].x, world[move[1]][move[0]].y)
-				#print("now     agent %s at (%d,%d) ---------") % (worldUpdated[move[1]][move[0]].id, worldUpdated[move[1]][move[0]].x, worldUpdated[move[1]][move[0]].y)
-
-				#erase agent's old location
-				worldUpdated[i][k].clear()
-				#print("And gone:     %s at (%d,%d) ---------") % (worldUpdated[i][k].id, worldUpdated[i][k].x, worldUpdated[i][k].y)
-			'''
-			elif world[i][k] == ' ':
-				print("EMPTY:  agent %s at (%d,%d) <<<<<<<<<<<<<<<<<<<<<<<<") % (world[i][k].id, world[i][k].x, world[i][k].y)
-			elif worldUpdated[i][k].satisfied == True:
-				print("HAPPY:  agent %s at (%d,%d) <<<<<<<<<<<<<<<<<<<<<<<<") % (world[i][k].id, world[i][k].x, world[i][k].y)
-			'''
-
-		#update the new world's satisfaction
-		worldUpdated = CheckSatisfaction(worldUpdated)
+				#if there is somewhere to move to, then move:
+				if move[0]:
+					#copy agent to new world
+					worldUpdated[move[2]][move[1]].move(world[i][k])
+					
+					#erase agent's old location
+					worldUpdated[i][k].clear()
+					
+					#update the new world's satisfaction in the two
+					# spots we changed
+					worldUpdated = CheckSatisfaction(worldUpdated, k, i)
+					worldUpdated = CheckSatisfaction(worldUpdated, move[1], move[2])
+								
 
 	return worldUpdated
 
@@ -414,17 +422,24 @@ def FindSatisfaction(world, targetX, targetY):
 			if cellNeighbors[i] not in closedSet:
 				if cellNeighbors[i].id == ' ':
 					#check if cell would satisfy agent
-					checkNeighbors = FindNeighbors(world, cellNeighbors[i].x, cellNeighbors[i].y)
-					searchCount = 0
-					for k in range(len(checkNeighbors)):
-						if checkNeighbors[k].id == search.id and checkNeighbors[k].x != search.x and checkNeighbors[k].y != search.y:
-							searchCount += 1
-					if searchCount >= search.threshold:
-						return [cellNeighbors[i].x, cellNeighbors[i].y]
+					if search.id == 'X' and cellNeighbors[i].supportX > search.threshold:
+						return [True, cellNeighbors[i].x, cellNeighbors[i].y]
+					elif search.id == 'O' and cellNeighbors[i].supportO > search.threshold:
+						return [True, cellNeighbors[i].x, cellNeighbors[i].y]
+
+				# if cellNeighbors[i].id == ' ':
+				# 	#check if cell would satisfy agent
+				# 	checkNeighbors = FindNeighbors(world, cellNeighbors[i].x, cellNeighbors[i].y)
+				# 	searchCount = 0
+				# 	for k in range(len(checkNeighbors)):
+				# 		if checkNeighbors[k].id == search.id and checkNeighbors[k].x != search.x and checkNeighbors[k].y != search.y:
+				# 			searchCount += 1
+				# 	if searchCount >= search.threshold:
+				# 		return [True, cellNeighbors[i].x, cellNeighbors[i].y]
 				openSet.append(cellNeighbors[i])
 
 	#print("didn't find a spot")
-	return [targetX, targetY]
+	return [False, targetX, targetY]
 
 
 class Simulation:
@@ -444,7 +459,7 @@ class Simulation:
 		self.worlds.append(SpawnWorld(sizeX, sizeY, population, threshold1, threshold1Percent, threshold2))
 		#run the simulation
 		for i in (range(self.totalRuns)):
-			print("Calculating run %4d for simulation %2d") % (i+1, simNumber)
+			print("Calculating run %4d for simulation %2d\r") % (i+1, simNumber)
 			self.worlds.append(UpdateWorld(self.worlds[i]))
 
 
@@ -472,6 +487,6 @@ class Simulation:
 				print("Entered simulation number %d is invalid and therefore was not displayed. \n") % (showRuns[i])
 
 if __name__ == '__main__':
-	simA = Simulation(1,10,50,50,0.6,5)
-	simA.show(range(10))
-	#simA.show([4], "satisfied")
+	simA = Simulation(1,1,3,3,0.6,3)
+	simA.show(range(1))
+	simA.show(range(1), "satisfied")
