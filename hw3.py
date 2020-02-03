@@ -35,7 +35,7 @@ class agent:
 				self.supportX += 1
 			elif neighbors[j].id == 'O':
 				self.supportO += 1
-			print("Self (%d,%d), Neighbor (%d,%d)") % (self.x, self.y, neighbors[j].x, neighbors[j].y)
+			#print("Self %s (%d,%d), Neighbor %s (%d,%d)") % (self.id, self.x, self.y, neighbors[j].id, neighbors[j].x, neighbors[j].y)
 
 		#update satisfaction
 		if self.id == 'X' and self.supportX >= self.threshold:
@@ -200,7 +200,7 @@ def CheckSatisfaction(world, targetX=None , targetY=None):
 				neighbors = FindNeighbors(world, locationX, locationY)
 				
 				#have each agent look around and decide if they're happy
-				world[locationX][locationY].calcSupport(neighbors)
+				world[locationY][locationX].calcSupport(neighbors)
 			
 	#update only what has been changed locally
 	if type(targetX) == int and type(targetY) == int:
@@ -259,7 +259,7 @@ def FindNeighbors(world, targetX, targetY):
 	#all done finding neighbors
 	return neighbors
 
-def ShowWorld(world, simulation, step, threshold1, threshold1Percent, threshold2, setting):
+def ShowWorld(world, simulation, step, countMove, threshold1, threshold1Percent, threshold2, setting):
 	
 	"""
 	This function prints the world into the terminal. You have
@@ -268,6 +268,7 @@ def ShowWorld(world, simulation, step, threshold1, threshold1Percent, threshold2
 		world - pass in a matrix of agents, aka the world
 		simulation - what simulation number
 		step - what step of the simulation
+		countMove - the integer number of agents that moved
 		threshold1 - an integer 0 to 8 that defines how homophilous an
 			agent is
 		threshold1Percent - a fraction of how many agents should have 
@@ -293,58 +294,82 @@ def ShowWorld(world, simulation, step, threshold1, threshold1Percent, threshold2
 			rowText += '-'
 		print rowText
 
-	#print a fancy title
-	PrintBorder()
-	print("----------------------->    SIMULATION Number: %2d    STEP Number: %4d    <----------------------------") % (simulation, step)
-	print("------------>    %2d%%  agents with Threshold: %1d      %2d%% agents with Theshold 2: %1d    <---------------") % (threshold1Percent*100, threshold1, (100 - threshold1Percent*100), threshold2)
-	PrintBorder()
-	
-	#count numbers satisfied and not satisfied
-	numSatisfied = 0
-	numUnsatisfied = 0
+	# don't print worlds that are repeats of previous
+	# worlds where the agents dont move
+	if step > 0 and countMove == 0:
+		print (countMove)
+		print (type(countMove))
+		print ("%d agents moved, therefore run %4d of simulation %d was not displayed.") % (countMove, self.showRuns[i], self.simNumber)
+	else:	
+		#print a fancy title
+		PrintBorder()
+		print("----------------------->    SIMULATION Number: %2d    STEP Number: %4d    <----------------------------") % (simulation, step)
+		print("------------>    %2d%%  agents with Threshold: %1d      %2d%% agents with Theshold 2: %1d    <----------------") % (threshold1Percent*100, threshold1, (100 - threshold1Percent*100), threshold2)
+		PrintBorder()
+		
+		#count numbers satisfied and not satisfied
+		numSatisfied = 0
+		numUnsatisfied = 0
 
-	#iterate through world and print agent
-	for i in range(rows):
-		rowText = '| '
-		for k in range(columns):
-			#count satisfied agents
-			if world[i][k].satisfied and world[i][k].id != ' ':
-				numSatisfied += 1
-			elif world[i][k].id != ' ' and not world[i][k].satisfied:
-				numUnsatisfied += 1
+		#iterate through world and print agent
+		for i in range(rows):
+			rowText = '| '
+			for k in range(columns):
+				#count satisfied agents
+				if world[i][k].satisfied and world[i][k].id != ' ':
+					numSatisfied += 1
+				elif world[i][k].id != ' ' and not world[i][k].satisfied:
+					numUnsatisfied += 1
 
-			if setting == 'threshold':
-				if world[i][k].id != ' ':
-					rowText += str(world[i][k].threshold) + ' '
-				else:
-					rowText += '  '			
-			elif setting == 'satisfied':
-				if world[i][k].id != ' ':
-					if world[i][k].satisfied:
-						rowText += '@ '
+				if setting == 'threshold':
+					if world[i][k].id != ' ':
+						rowText += str(world[i][k].threshold) + ' '
 					else:
-						 rowText += '* '
+						rowText += '  '			
+				elif setting == 'satisfied':
+					if world[i][k].id != ' ':
+						if world[i][k].satisfied:
+							rowText += '@ '
+						else:
+							 rowText += '* '
+					else:
+						rowText += '  '
+				elif setting == 'support':
+					if world[i][k].id == 'X':
+						rowText += str(world[i][k].supportX) + ' '
+					elif world[i][k].id == 'O':
+						rowText += str(world[i][k].supportO) + ' '
+					else:
+						rowText += '  '
+				elif setting == 'id-readable':
+					if world[i][k].id == 'X':
+						rowText += 'x '
+					elif world[i][k].id == 'O':
+						rowText += 'O '
+					else:
+						rowText += '  '
 				else:
-					rowText += '  '
-			else:
-				rowText += world[i][k].id + ' '
+					rowText += world[i][k].id + ' '
 
-		rowText += "|"
-		print rowText
+			rowText += "|"
+			print rowText
 
-	#print fancy footer
-	PrintBorder()
-	populationPercent = (numSatisfied+numUnsatisfied)*100/(rows*columns) #should be the same as what was entered eariler
-	print("------>    STATS:    %4d agents satisfied, %4d agents not satisfied,    %d%% population    <----------") % (numSatisfied, numUnsatisfied, populationPercent)
-	PrintBorder()
-	if setting == 'id':
-		print("----------------------->    KEY:    'X' = 'Agent X'    'O' = 'Agent O'    <----------------------------")
-	elif setting == 'threshold':
-		print("------------------>    KEY:    'N' = 'threshold value N, ranging from 0 to 8'    <---------------------")
-	elif setting == 'satisfied':
-		print("------------------>    KEY:    '@'' = 'satisfied'     '*' = 'not satisfied'    <-----------------------")
-	PrintBorder()
-	print("\n")
+		#print fancy footer
+		PrintBorder()
+		populationPercent = (numSatisfied+numUnsatisfied)*100/(rows*columns) #should be the same as what was entered eariler
+		print("----> STATS: %4d agents moved, %4d agents satisfied, %4d agents unsatisfied,    %d%% population <----") % (countMove, numSatisfied, numUnsatisfied, populationPercent)
+		PrintBorder()
+		if setting == 'id' or setting == 'id-readable':
+			print("----------------------->    KEY:    'X' = 'Agent X'    'O' = 'Agent O'    <----------------------------")
+		elif setting == 'threshold':
+			print("------------------>    KEY:    'N' = 'threshold value N, ranging from 0 to 8'    <---------------------")
+		elif setting == 'satisfied':
+			print("------------------>    KEY:    '@'' = 'satisfied'     '*' = 'not satisfied'    <-----------------------")
+		elif setting == 'support':
+			print("------------------>    KEY:    'N' = 'support value N, ranging from 0 to 8'    <---------------------")
+
+		PrintBorder()
+		print("\n")
 
 def UpdateWorld(world):
 	
@@ -356,6 +381,7 @@ def UpdateWorld(world):
 		world - pass in a matrix of agents, aka the world
 	Returns:
 		worldUpdated - an updated world
+		countMove - the integer number of agents that moved
 	"""
 	
 	#calculate size of world
@@ -364,6 +390,9 @@ def UpdateWorld(world):
 
 	#make a deep copy of the world
 	worldUpdated = copy.deepcopy(world)
+
+	#count the number of agents that move around
+	countMove = 0
 
 	#iterate through the old world to populate the new world
 	for i in range(rows):
@@ -379,6 +408,9 @@ def UpdateWorld(world):
 
 				#if there is somewhere to move to, then move:
 				if move[0]:
+					#increment counter
+					countMove += 1
+
 					#copy agent to new world
 					worldUpdated[move[2]][move[1]].move(world[i][k])
 					
@@ -389,9 +421,11 @@ def UpdateWorld(world):
 					# spots we changed
 					worldUpdated = CheckSatisfaction(worldUpdated, k, i)
 					worldUpdated = CheckSatisfaction(worldUpdated, move[1], move[2])
-								
-
-	return worldUpdated
+	
+	#one last check								
+	worldUpdated = CheckSatisfaction(worldUpdated)
+	print("%d agents moved") %(countMove)
+	return [worldUpdated, countMove]
 
 def FindSatisfaction(world, targetX, targetY):
 
@@ -409,38 +443,60 @@ def FindSatisfaction(world, targetX, targetY):
 	"""
 
 	search = world[targetY][targetX]
+	if search.id == 'X':
+		searchSupport = search.supportX
+	else:
+		searchSupport = search.supportO
 	openSet = deque()
-	closedSet = []
-
+	closedSet = set()
+	lookedAt = set()
 	openSet.append(world[targetY][targetX])
+	nextBestCell = [None, None, None, None]
+	if world[targetY][targetX].satisfied == False:
+		while len(openSet) != 0:
+			#print("open %4d, closed %4d") % (len(openSet), len(closedSet))
+			cell = openSet.popleft()
+			closedSet.add(cell)
+			lookedAt.add(cell)
+			cellNeighbors = FindNeighbors(world, cell.x, cell.y)
+			for i in range(len(cellNeighbors)):
+				if cellNeighbors[i] not in closedSet and cellNeighbors[i] not in lookedAt:
+					if cellNeighbors[i].id == ' ':
+						
+						#pick the comparator
+						if search.id == 'X':
+							supportI = cellNeighbors[i].supportX
+						else:
+							supportI = cellNeighbors[i].supportO
+	
+						#check if cell would satisfy agent
+						if supportI > search.threshold:
+							return [True, cellNeighbors[i].x, cellNeighbors[i].y]
+						elif nextBestCell[0] is None and (supportI + 1) > search.threshold and (supportI + 1) > searchSupport:
+							nextBestCell[0] = [cellNeighbors[i].x,cellNeighbors[i].y]
+						elif nextBestCell[1] is None and (supportI + 2) > search.threshold and (supportI + 2) > searchSupport:
+							nextBestCell[1] = [cellNeighbors[i].x,cellNeighbors[i].y]
+						elif nextBestCell[2] is None and (supportI + 3) > search.threshold and (supportI + 3) > searchSupport:
+							nextBestCell[2] = [cellNeighbors[i].x,cellNeighbors[i].y]
+						elif nextBestCell[3] is None and (supportI + 4) > search.threshold and (supportI + 4) > searchSupport:
+							nextBestCell[3] = [cellNeighbors[i].x,cellNeighbors[i].y]
+			
+					openSet.append(cellNeighbors[i]) #cells to visit and look at their neighbors
+					lookedAt.add(cellNeighbors[i]) #cells we already checked out
 
-	while len(openSet) != 0:
-		cell = openSet.popleft()
-		closedSet.append(cell)
-		cellNeighbors = FindNeighbors(world, cell.x, cell.y)
-		for i in range(len(cellNeighbors)):
-			if cellNeighbors[i] not in closedSet:
-				if cellNeighbors[i].id == ' ':
-					#check if cell would satisfy agent
-					if search.id == 'X' and cellNeighbors[i].supportX > search.threshold:
-						return [True, cellNeighbors[i].x, cellNeighbors[i].y]
-					elif search.id == 'O' and cellNeighbors[i].supportO > search.threshold:
-						return [True, cellNeighbors[i].x, cellNeighbors[i].y]
+		#sub-optimal move found
+		for k in range(len(nextBestCell)):
+			if nextBestCell[k] is not None:
+				#print("didn't find a spot, moved to be a little happier by %d") % (k)
+				return [True, nextBestCell[k][0], nextBestCell[k][1]]
 
-				# if cellNeighbors[i].id == ' ':
-				# 	#check if cell would satisfy agent
-				# 	checkNeighbors = FindNeighbors(world, cellNeighbors[i].x, cellNeighbors[i].y)
-				# 	searchCount = 0
-				# 	for k in range(len(checkNeighbors)):
-				# 		if checkNeighbors[k].id == search.id and checkNeighbors[k].x != search.x and checkNeighbors[k].y != search.y:
-				# 			searchCount += 1
-				# 	if searchCount >= search.threshold:
-				# 		return [True, cellNeighbors[i].x, cellNeighbors[i].y]
-				openSet.append(cellNeighbors[i])
+		#no options found!
+		print("didn't find a spot, didn't move")
+		return [False, targetX, targetY]
 
-	#print("didn't find a spot")
+	#skipped all the searching
+	print("already happy, dont need to move")
 	return [False, targetX, targetY]
-
 
 class Simulation:
 
@@ -454,27 +510,35 @@ class Simulation:
 		self.threshold1 = threshold1
 		self.threshold1Percent = threshold1Percent
 		self.threshold2 = threshold2
+		self.countMove = 0
 		self.worlds = []
 		print("Calculating run    0 for simulation %2d") % (simNumber)
 		self.worlds.append(SpawnWorld(sizeX, sizeY, population, threshold1, threshold1Percent, threshold2))
+		self.Show(0, 0, "id-readable")
+		self.Show(0, 0, "satisfied")
+		self.Show(0, 0, "suport")
 		#run the simulation
 		for i in (range(self.totalRuns)):
-			print("Calculating run %4d for simulation %2d\r") % (i+1, simNumber)
-			self.worlds.append(UpdateWorld(self.worlds[i]))
+			print("Calculating run %4d for simulation %2d") % (i+1, simNumber)
+			updateResults = UpdateWorld(self.worlds[i])
+			self.worlds.append(updateResults[0])
+			self.Show(i, updateResults[1], "id-readable")
 
-
-	def show(self, showRuns, setting = 'id'):
+	def Show(self, showRuns, countMove, setting = 'id'):
 		"""
 		This function lets you print any of the simulation runs 
 		that were calculated.
 		Parameters:
 			showRuns - an array of integers that represent the 
 				runs that should be displayed
-			setting - either 'id', 'threshold', or 'satisfied'; use
-			to specify the display to show a property
+			countMove - the integer number of agents that moved
+			setting - either 'id', 'threshold', 'satisfied',
+				'support', or 'id-readable'; use to specify
+				the display to show a property
 		Returns:
 			nothing
 		"""
+		
 		#iterate through runs to show
 		if type(showRuns).__name__ == 'int':
 			run = showRuns
@@ -482,11 +546,12 @@ class Simulation:
 			showRuns.append(run)
 		for i in range(len(showRuns)):
 			if i >= 0 and showRuns[i] < len(self.worlds):
-				ShowWorld(self.worlds[showRuns[i]], self.simNumber, showRuns[i], self.threshold1, self.threshold1Percent, self.threshold2, setting)
+				ShowWorld(self.worlds[showRuns[i]], self.simNumber, showRuns[i], countMove, self.threshold1, self.threshold1Percent, self.threshold2, setting)
 			else:
 				print("Entered simulation number %d is invalid and therefore was not displayed. \n") % (showRuns[i])
 
 if __name__ == '__main__':
-	simA = Simulation(1,1,3,3,0.6,3)
-	simA.show(range(1))
-	simA.show(range(1), "satisfied")
+	simA = Simulation(1,10,50,50,0.6,5)
+	# simA.Show(range(5,10), "id-readable")
+	#simA.show([0,10], "satisfied")
+	#simA.show(0, "support")
