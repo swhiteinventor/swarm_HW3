@@ -304,7 +304,7 @@ def ShowWorld(world, simulation, step, countMove, threshold1, threshold1Percent,
 		#print a fancy title
 		PrintBorder()
 		print("----------------------->    SIMULATION Number: %2d    STEP Number: %4d    <----------------------------") % (simulation, step)
-		print("------------>    %2d%%  agents with Threshold: %1d      %2d%% agents with Theshold 2: %1d    <----------------") % (threshold1Percent*100, threshold1, (100 - threshold1Percent*100), threshold2)
+		print("------------>    %2d%%  agents with Threshold: %1d      %2d%% agents with Threshold 2: %1d    <---------------") % (threshold1Percent*100, threshold1, (100 - threshold1Percent*100), threshold2)
 		PrintBorder()
 		
 		#count numbers satisfied and not satisfied
@@ -579,6 +579,7 @@ if __name__ == '__main__':
 	#simulation parameters
 	worldSizeX = 50
 	worldSizeY = 50
+	iterations = 10
 	runs = [10, 100, 100]
 	populationPercent = [0.6, 0.8]
 	threshold1 = [3,4,3]
