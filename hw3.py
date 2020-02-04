@@ -2,6 +2,7 @@
 from random import randint
 from collections import deque 
 import copy
+import sys
 
 class agent:
 
@@ -297,10 +298,9 @@ def ShowWorld(world, simulation, step, countMove, threshold1, threshold1Percent,
 	# don't print worlds that are repeats of previous
 	# worlds where the agents dont move
 	if step > 0 and countMove == 0:
-		print (countMove)
-		print (type(countMove))
-		print ("%d agents moved, therefore run %4d of simulation %d was not displayed.") % (countMove, self.showRuns[i], self.simNumber)
-	else:	
+		print ("%d agents moved, therefore run %4d of simulation %d was not displayed.") % (countMove, step, simulation)
+	
+	else:
 		#print a fancy title
 		PrintBorder()
 		print("----------------------->    SIMULATION Number: %2d    STEP Number: %4d    <----------------------------") % (simulation, step)
@@ -424,7 +424,6 @@ def UpdateWorld(world):
 	
 	#one last check								
 	worldUpdated = CheckSatisfaction(worldUpdated)
-	print("%d agents moved") %(countMove)
 	return [worldUpdated, countMove]
 
 def FindSatisfaction(world, targetX, targetY):
@@ -491,11 +490,11 @@ def FindSatisfaction(world, targetX, targetY):
 				return [True, nextBestCell[k][0], nextBestCell[k][1]]
 
 		#no options found!
-		print("didn't find a spot, didn't move")
+		#print("didn't find a spot, didn't move")
 		return [False, targetX, targetY]
 
 	#skipped all the searching
-	print("already happy, dont need to move")
+	#print("already happy, dont need to move")
 	return [False, targetX, targetY]
 
 class Simulation:
@@ -510,19 +509,40 @@ class Simulation:
 		self.threshold1 = threshold1
 		self.threshold1Percent = threshold1Percent
 		self.threshold2 = threshold2
-		self.countMove = 0
 		self.worlds = []
-		print("Calculating run    0 for simulation %2d") % (simNumber)
+		#print("Calculating run    0 for simulation %2d") % (simNumber)
 		self.worlds.append(SpawnWorld(sizeX, sizeY, population, threshold1, threshold1Percent, threshold2))
 		self.Show(0, 0, "id-readable")
-		self.Show(0, 0, "satisfied")
-		self.Show(0, 0, "suport")
+
+		#keep track of the number of moves of agents
+		countMove = 0
+		countMovePrev = 1
+		countMovePrevPrev = 2
+		countMovePrevPrevPrev = 2
+
 		#run the simulation
 		for i in (range(self.totalRuns)):
-			print("Calculating run %4d for simulation %2d") % (i+1, simNumber)
+			#print("Calculating run %4d for simulation %2d") % (i+1, simNumber)
 			updateResults = UpdateWorld(self.worlds[i])
 			self.worlds.append(updateResults[0])
-			self.Show(i, updateResults[1], "id-readable")
+			self.Show(i+1, updateResults[1], "id-readable")
+			#self.show(i,updateResults[1], "threshold")
+			#self.Show(i, updateResults[1], "satisfied")
+			#self.Show(i, updateResults[1], "support")
+			
+			#update tracking for number of moves
+			countMovePrevPrevPrev = countMovePrevPrev
+			countMovePrevPrev = countMovePrev
+			countMovePrev = countMove
+			countMove = updateResults[1]
+
+			#check if the system stabilized
+			if countMovePrevPrev == countMovePrev == countMove:
+				print("Ending simulation %d because run %d, %d, and %d were all identical.") % (simNumber, i-1, i, i+1)
+				return
+			if countMove == countMovePrevPrev and countMovePrev == countMovePrevPrevPrev:
+				print("Ending simulation %d because runs %d, %d, %d, and %d showed oscillatory behavior.") % (simNumber, i-2, i-1, i, i+1)
+				return
 
 	def Show(self, showRuns, countMove, setting = 'id'):
 		"""
@@ -551,7 +571,44 @@ class Simulation:
 				print("Entered simulation number %d is invalid and therefore was not displayed. \n") % (showRuns[i])
 
 if __name__ == '__main__':
-	simA = Simulation(1,10,50,50,0.6,5)
-	# simA.Show(range(5,10), "id-readable")
-	#simA.show([0,10], "satisfied")
-	#simA.show(0, "support")
+	
+	#grab the write path for the terminal
+	terminal = sys.stdout
+
+
+	#simulation parameters
+	worldSizeX = 50
+	worldSizeY = 50
+	# runs = [100, 100, 100]
+	# populationPercent = [0.6, 0.8]
+	# threshold1 = [3,4,3]
+	# threshold1Percent = [1,1,0.8]
+	# threshold2 = [0,0,5]
+	
+	iterations = 1
+	populationPercent = [0.8]
+	threshold1 = [6]
+	threshold1Percent = [1]
+	threshold2 = [0]
+	runs = [100]
+
+	#loop through parameters and create files
+	for i in range(len(populationPercent)):
+		for j in range(len(threshold1)):
+			for k in range(iterations):
+				
+				#unique name for each file that holds the simulation results
+				filename = ('population_%2d_t1_%d_t1p_%3d_t2_%d_simulation_%d.txt') % (populationPercent[i]*100,threshold1[j],threshold1Percent[j]*100,threshold2[j],k)
+				
+				#change the write path for 'print()' to a text file,
+				# note that openign the file in write ('w') clears
+				# the file of the previous contents
+				file = open(filename, 'w') 
+				sys.stdout = file
+				
+				#run the simulation
+				simA = Simulation(k, runs[j], worldSizeX, worldSizeY, populationPercent[i], threshold1[j], threshold1Percent[j], threshold2[j])
+				
+				#change the write path back and close the file
+				sys.stdout = terminal
+				file.close()
