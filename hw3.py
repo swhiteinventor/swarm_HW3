@@ -579,18 +579,18 @@ if __name__ == '__main__':
 	#simulation parameters
 	worldSizeX = 50
 	worldSizeY = 50
-	# runs = [100, 100, 100]
-	# populationPercent = [0.6, 0.8]
-	# threshold1 = [3,4,3]
-	# threshold1Percent = [1,1,0.8]
-	# threshold2 = [0,0,5]
+	runs = [10, 100, 100]
+	populationPercent = [0.6, 0.8]
+	threshold1 = [3,4,3]
+	threshold1Percent = [1,1,0.8]
+	threshold2 = [0,0,5]
 	
-	iterations = 1
-	populationPercent = [0.8]
-	threshold1 = [6]
-	threshold1Percent = [1]
-	threshold2 = [0]
-	runs = [100]
+	# iterations = 1
+	# populationPercent = [0.8]
+	# threshold1 = [6]
+	# threshold1Percent = [1]
+	# threshold2 = [0]
+	# runs = [100]
 
 	#loop through parameters and create files
 	for i in range(len(populationPercent)):
